@@ -1,0 +1,171 @@
+/*
+  Styling for the Grocery Planner web app. The palette uses soft
+  earth‑toned colours to evoke a natural, solarpunk aesthetic. Layout
+  elements are spaced generously and wrapped within card containers to
+  improve readability on both desktop and mobile screens.
+*/
+
+:root {
+  --bg: #f5f3e0; /* light beige background */
+  --card-bg: #fffdf5; /* slightly lighter card background */
+  --accent: #8abf69; /* muted green for buttons and highlights */
+  --accent-dark: #5c8c47; /* darker shade for hover states */
+  --text: #333; /* dark grey text for readability */
+  --heading: #2c491b; /* deep green for headings */
+  --secondary: #d9a441; /* golden accent used sparingly */
+  --border: #e0dab8; /* subtle border colour */
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+  color: white;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.05rem;
+}
+
+header p {
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+main {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 1rem;
+  gap: 1rem;
+  flex-grow: 1;
+}
+
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex: 1 1 320px;
+  max-width: 480px;
+}
+
+.card h2 {
+  margin-top: 0;
+  color: var(--heading);
+  font-size: 1.25rem;
+}
+
+.field-group {
+  display: flex;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
+input[type="text"],
+input[type="url"],
+textarea {
+  flex-grow: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: #fff;
+  color: var(--text);
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+button:hover,
+button:focus {
+  background-color: var(--accent-dark);
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.list li {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.list li:last-child {
+  border-bottom: none;
+}
+
+.list li span.category {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--accent-dark);
+}
+
+.remove-btn {
+  background-color: transparent;
+  border: none;
+  color: var(--accent-dark);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.remove-btn:hover {
+  color: var(--secondary);
+}
+
+footer {
+  background-color: var(--accent);
+  color: white;
+  padding: 1rem;
+  text-align: center;
+}
+
+footer a {
+  color: var(--secondary);
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

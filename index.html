@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grocery Planner</title>
+    <!--
+      The Grocery Planner web app helps you plan meals and grocery shopping.
+      You can paste a recipe URL to fetch its ingredients, manually enter
+      ingredients, track what you already have in your pantry, generate a
+      categorized shopping list and even scan receipts to track spending.  The
+      design uses warm earth tones to evoke a solarpunk aesthetic.
+    -->
+    <link rel="stylesheet" href="style.css" />
+    <!-- Include Tesseract.js for client‑side OCR. This library is open source
+         and can run entirely in the browser【78933268759394†L7-L13】. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>Grocery Planner</h1>
+      <p>Meal planning and shopping made simple</p>
+    </header>
+    <main>
+      <!-- Recipe input section -->
+      <section id="recipe-section" class="card">
+        <h2>Recipe Ingredients</h2>
+        <div class="field-group">
+          <input
+            type="url"
+            id="recipe-url"
+            placeholder="Enter recipe URL"
+            aria-label="Recipe URL"
+          />
+          <button id="fetch-recipe-btn">Fetch Ingredients</button>
+        </div>
+        <div class="field-group">
+          <textarea
+            id="manual-ingredients"
+            rows="4"
+            placeholder="Or manually list ingredients, one per line..."
+            aria-label="Manual ingredients"
+          ></textarea>
+          <button id="parse-manual-btn">Parse Manual Ingredients</button>
+        </div>
+        <ul id="ingredients-list" class="list"></ul>
+
+        <div class="field-group">
+          <button id="save-recipe-btn">Save Recipe</button>
+        </div>
+      </section>
+
+      <!-- Pantry section -->
+      <section id="pantry-section" class="card">
+        <h2>Pantry</h2>
+        <div class="field-group">
+          <input
+            type="text"
+            id="pantry-input"
+            placeholder="Add pantry item"
+            aria-label="Pantry item"
+          />
+          <button id="add-pantry-btn">Add to Pantry</button>
+        </div>
+        <ul id="pantry-list" class="list"></ul>
+      </section>
+
+      <!-- Grocery list section -->
+      <section id="grocery-section" class="card">
+        <h2>Grocery List</h2>
+        <div class="field-group">
+          <button id="generate-list-btn">Generate List from Recipes</button>
+        </div>
+        <div class="field-group">
+          <input
+            type="text"
+            id="grocery-input"
+            placeholder="Add custom grocery item"
+            aria-label="Custom grocery item"
+          />
+          <button id="add-grocery-btn">Add to List</button>
+        </div>
+        <ul id="grocery-list" class="list"></ul>
+      </section>
+
+      <!-- Receipt scanner section -->
+      <section id="receipt-section" class="card">
+        <h2>Receipt Scanner</h2>
+        <div class="field-group">
+          <input type="file" id="receipt-input" accept="image/*" />
+          <button id="scan-receipt-btn">Scan Receipt</button>
+        </div>
+        <ul id="receipt-items" class="list"></ul>
+      </section>
+
+      <!-- Saved recipes section -->
+      <section id="saved-recipes-section" class="card">
+        <h2>Saved Recipes</h2>
+        <ul id="saved-recipes-list" class="list"></ul>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Powered by
+        <a
+          href="https://zestfuldata.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Zestful</a
+        >
+        and
+        <a
+          href="https://tesseract.projectnaptha.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Tesseract.js</a
+        >.
+      </p>
+    </footer>
+    <!-- Main application logic -->
+    <script src="script.js" defer></script>
+  </body>
+</html>
