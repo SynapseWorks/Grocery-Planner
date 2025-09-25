@@ -29,9 +29,13 @@ const AUTH_PASSWORD = 'password123';
  * offers a generous free tier with 1 GiB storage and 50k reads per day【685750844728363†L1419-L1433】.
  */
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_AUTH_DOMAIN',
-  projectId: 'YOUR_PROJECT_ID',
+  apiKey: "AIzaSyBWxgNPsR0MPsoyM0Po9XxuSmK9kEySS1Y",
+  authDomain: "grocery-planner-10c99.firebaseapp.com",
+  projectId: "grocery-planner-10c99",
+  storageBucket: "grocery-planner-10c99.firebasestorage.app",
+  messagingSenderId: "2067957623",
+  appId: "1:2067957623:web:0b66798f7f75c951ca4372",
+  measurementId: "G-7FXJQST5N3"
 };
 
 // Initialize Firebase and Firestore if the SDKs are loaded. The compat
