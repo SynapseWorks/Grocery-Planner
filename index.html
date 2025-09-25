@@ -15,8 +15,30 @@
     <!-- Include Tesseract.js for client‑side OCR. This library is open source
          and can run entirely in the browser【78933268759394†L7-L13】. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js" defer></script>
+    <!-- Firebase SDKs (compat builds) for App and Firestore. These libraries
+         provide a free‑tier backend for persisting data across devices. You
+         will need to replace the firebaseConfig placeholders in script.js
+         with your own project details. -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js" defer></script>
   </head>
   <body>
+    <!-- Simple login modal for single‑user authentication. The modal is
+         displayed until the correct username and password are entered. -->
+    <div id="login-modal" class="modal">
+      <div class="modal-content">
+        <h2>Login</h2>
+        <label>
+          Username
+          <input type="text" id="login-username" placeholder="Username" />
+        </label>
+        <label>
+          Password
+          <input type="password" id="login-password" placeholder="Password" />
+        </label>
+        <button id="login-btn">Login</button>
+      </div>
+    </div>
     <header>
       <h1>Grocery Planner</h1>
       <p>Meal planning and shopping made simple</p>

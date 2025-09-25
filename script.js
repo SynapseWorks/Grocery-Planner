@@ -12,11 +12,106 @@
 // Replace with your own Zestful API key if you want ingredient parsing.
 const ZESTFUL_API_KEY = '';
 
+/*
+ * Single‑user authentication.
+ * The app checks against these credentials before allowing access. You can
+ * change AUTH_USERNAME and AUTH_PASSWORD to your preferred values. A
+ * simple token is stored in localStorage once the user logs in so they
+ * remain authenticated across reloads on the same device. For more
+ * sophisticated authentication, consider using Firebase Authentication.
+ */
+const AUTH_USERNAME = 'user';
+const AUTH_PASSWORD = 'password123';
+
+/*
+ * Firebase configuration. Replace the placeholder values with your own
+ * Firebase project settings (found in your Firebase console). Firestore
+ * offers a generous free tier with 1 GiB storage and 50k reads per day【685750844728363†L1419-L1433】.
+ */
+const firebaseConfig = {
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_AUTH_DOMAIN',
+  projectId: 'YOUR_PROJECT_ID',
+};
+
+// Initialize Firebase and Firestore if the SDKs are loaded. The compat
+// versions attached via script tags expose the global `firebase` object.
+let db;
+if (typeof firebase !== 'undefined') {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+}
+
 // State containers
+// `ingredients` holds raw strings collected from recipes or manual input.
 let ingredients = [];
+// `pantry` is an array of objects { id: <doc id or timestamp>, name: <string> }
+// When loading from Firestore, `id` corresponds to the document id for deletion.
 let pantry = [];
+// `groceryList` contains objects { name: <string>, category: <string> }
 let groceryList = [];
-let savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+// `savedRecipes` will be loaded from Firestore. Each recipe has an id, name and ingredients array.
+let savedRecipes = [];
+
+// Load pantry items and recipes from Firestore
+async function loadData() {
+  // If Firestore is not available, attempt to load localStorage fallbacks
+  if (!db) {
+    try {
+      const pantryStr = localStorage.getItem('pantry');
+      pantry = pantryStr ? JSON.parse(pantryStr) : [];
+      const recipesStr = localStorage.getItem('savedRecipes');
+      savedRecipes = recipesStr ? JSON.parse(recipesStr) : [];
+      displayPantry();
+      displaySavedRecipes();
+    } catch (err) {
+      console.warn('No Firestore available and local data could not be loaded', err);
+    }
+    return;
+  }
+  try {
+    // Load pantry
+    const pantrySnap = await db.collection('pantry').get();
+    // Keep the document id to enable deletions later.
+    pantry = pantrySnap.docs.map((doc) => ({ id: doc.id, name: doc.data().name }));
+    displayPantry();
+    // Load recipes
+    const recipesSnap = await db.collection('recipes').get();
+    savedRecipes = recipesSnap.docs.map((doc) => ({
+      id: doc.id,
+      name: doc.data().name,
+      ingredients: doc.data().ingredients,
+    }));
+    displaySavedRecipes();
+  } catch (err) {
+    console.error('Error loading data from Firestore:', err);
+  }
+}
+
+// Authentication handling
+function checkLogin() {
+  const token = localStorage.getItem('authToken');
+  const modal = document.getElementById('login-modal');
+  if (token === 'loggedIn') {
+    if (modal) modal.style.display = 'none';
+    loadData();
+  } else {
+    if (modal) modal.style.display = 'flex';
+  }
+}
+
+function handleLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (username === AUTH_USERNAME && password === AUTH_PASSWORD) {
+    localStorage.setItem('authToken', 'loggedIn');
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.style.display = 'none';
+    loadData();
+  } else {
+    alert('Invalid username or password.');
+  }
+}
 
 // Utility: convert a string to a canonical ingredient name
 function normalizeIngredient(item) {
@@ -72,12 +167,24 @@ function displayPantry() {
   const listEl = document.getElementById('pantry-list');
   renderList(
     listEl,
-    pantry.map((name) => ({ name })),
+    pantry,
     {
       removable: true,
       removeCallback: (index) => {
-        pantry.splice(index, 1);
+        const removed = pantry.splice(index, 1)[0];
         displayPantry();
+        // Remove from Firestore if available and id exists
+        if (db && removed && removed.id) {
+          db.collection('pantry')
+            .doc(removed.id)
+            .delete()
+            .catch((err) => {
+              console.error('Failed to delete pantry item:', err);
+            });
+        } else {
+          // Update localStorage fallback
+          localStorage.setItem('pantry', JSON.stringify(pantry));
+        }
       },
     },
   );
@@ -110,10 +217,33 @@ function displaySavedRecipes() {
     loadBtn.textContent = 'Load';
     loadBtn.classList.add('remove-btn');
     loadBtn.addEventListener('click', () => {
+      // Replace the current ingredients with this recipe's ingredients and update display
       ingredients = [...recipe.ingredients];
       displayIngredients();
     });
     li.appendChild(loadBtn);
+    // Add a delete button to remove a saved recipe
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '✕';
+    deleteBtn.classList.add('remove-btn');
+    deleteBtn.addEventListener('click', () => {
+      if (confirm('Delete this saved recipe?')) {
+        savedRecipes.splice(index, 1);
+        displaySavedRecipes();
+        if (db && recipe.id) {
+          db.collection('recipes')
+            .doc(recipe.id)
+            .delete()
+            .catch((err) => {
+              console.error('Failed to delete recipe:', err);
+            });
+        } else {
+          // Fall back to localStorage update
+          localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+        }
+      }
+    });
+    li.appendChild(deleteBtn);
     listEl.appendChild(li);
   });
 }
@@ -171,7 +301,7 @@ function categorizeItem(item) {
 // Generate grocery list based on ingredients and pantry
 function generateGroceryList() {
   groceryList = [];
-  const pantrySet = new Set(pantry.map((i) => normalizeIngredient(i)));
+  const pantrySet = new Set(pantry.map((i) => normalizeIngredient(i.name || i)));
   ingredients.forEach((ing) => {
     const norm = normalizeIngredient(ing);
     if (!pantrySet.has(norm)) {
@@ -199,6 +329,15 @@ async function fetchIngredientsFromUrl(url) {
 // Event handlers
 window.addEventListener('DOMContentLoaded', () => {
   // Attach event listeners
+
+  // Login handler
+  const loginBtn = document.getElementById('login-btn');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', handleLogin);
+  }
+
+  // Check authentication status on load
+  checkLogin();
   document
     .getElementById('fetch-recipe-btn')
     .addEventListener('click', async () => {
@@ -241,9 +380,31 @@ window.addEventListener('DOMContentLoaded', () => {
     .addEventListener('click', () => {
       const item = document.getElementById('pantry-input').value.trim();
       if (item) {
-        pantry.push(item);
-        document.getElementById('pantry-input').value = '';
-        displayPantry();
+        // Persist to Firestore if available, then update local pantry array with id
+        if (db) {
+          db.collection('pantry')
+            .add({ name: item })
+            .then((docRef) => {
+              pantry.push({ id: docRef.id, name: item });
+              document.getElementById('pantry-input').value = '';
+              displayPantry();
+            })
+            .catch((err) => {
+              console.error('Error adding pantry item:', err);
+              // Fallback: add with a timestamp id
+              const fallbackId = 'local-' + Date.now();
+              pantry.push({ id: fallbackId, name: item });
+              document.getElementById('pantry-input').value = '';
+              displayPantry();
+            });
+        } else {
+          // No Firestore: push to pantry with timestamp id and update localStorage fallback
+          const fallbackId = 'local-' + Date.now();
+          pantry.push({ id: fallbackId, name: item });
+          document.getElementById('pantry-input').value = '';
+          displayPantry();
+          localStorage.setItem('pantry', JSON.stringify(pantry));
+        }
       }
     });
 
@@ -275,15 +436,31 @@ window.addEventListener('DOMContentLoaded', () => {
       if (!name) {
         return;
       }
+      const recipeName = name.trim();
       const recipe = {
-        id: Date.now(),
-        name: name.trim(),
+        name: recipeName,
         ingredients: [...ingredients],
       };
-      savedRecipes.push(recipe);
-      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
-      displaySavedRecipes();
-      alert('Recipe saved!');
+      // Save to Firestore
+      if (db) {
+        db.collection('recipes')
+          .add(recipe)
+          .then((docRef) => {
+            savedRecipes.push({ id: docRef.id, ...recipe });
+            displaySavedRecipes();
+            alert('Recipe saved!');
+          })
+          .catch((err) => {
+            console.error('Error saving recipe:', err);
+            alert('Failed to save recipe.');
+          });
+      } else {
+        // Fall back to local storage if Firestore is unavailable
+        savedRecipes.push({ id: Date.now(), ...recipe });
+        localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+        displaySavedRecipes();
+        alert('Recipe saved locally.');
+      }
     });
 
   document
