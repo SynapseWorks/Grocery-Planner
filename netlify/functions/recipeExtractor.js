@@ -44,6 +44,62 @@ exports.handler = async (event) => {
         // silently skip malformed JSON
       }
     }
+    // Prepare final ingredients. If JSON‑LD extraction found none, attempt fallback.
+    let finalIngredients = ingredients;
+    if (finalIngredients.length === 0) {
+      try {
+        // Extract candidate ingredient lines from list items in the HTML. This is a
+        // heuristic fallback for pages without JSON‑LD. Only include lines that
+        // contain numbers or measurement words to avoid picking up directions.
+        const liMatches = [...html.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
+        const candidates = liMatches
+          .map((m) => m[1]
+            // Remove inner HTML tags
+            .replace(/<[^>]+>/g, '')
+            // Replace common HTML entities with spaces or ampersands
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .trim())
+          .filter((text) => {
+            return text && /\d|cup|tablespoon|teaspoon|tsp|tbsp|ounce|oz|gram|g|ml|kg/i.test(text);
+          });
+        if (candidates.length > 0) {
+          // Attempt to parse ingredients via Zestful if an API key is provided.
+          const apiKey = process.env.ZESTFUL_API_KEY;
+          if (apiKey) {
+            try {
+              const zestResponse = await fetch('https://api.zestfuldata.com/parseIngredients', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': apiKey,
+                },
+                body: JSON.stringify({ ingredients: candidates }),
+              });
+              if (zestResponse.ok) {
+                const zestData = await zestResponse.json();
+                if (zestData && Array.isArray(zestData.results)) {
+                  const parsed = zestData.results
+                    .map((res) => res.ingredient || res.name || res.original || '')
+                    .filter(Boolean);
+                  if (parsed.length > 0) {
+                    finalIngredients = parsed;
+                  }
+                }
+              }
+            } catch (apiErr) {
+              // If the API call fails, fallback to using the raw candidates
+            }
+          }
+          // If we still have no parsed ingredients, use raw candidate lines
+          if (finalIngredients.length === 0) {
+            finalIngredients = candidates;
+          }
+        }
+      } catch (fallbackErr) {
+        // swallow fallback errors
+      }
+    }
     return {
       statusCode: 200,
       headers: {
@@ -51,7 +107,7 @@ exports.handler = async (event) => {
         // Allow cross‑origin requests from the frontend running on Netlify
         'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ ingredients }),
+      body: JSON.stringify({ ingredients: finalIngredients }),
     };
   } catch (error) {
     return {
