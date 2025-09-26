@@ -67,7 +67,14 @@
         </div>
         <ul id="ingredients-list" class="list"></ul>
 
+        <!-- Input for naming a recipe; avoids using the browser prompt on mobile devices -->
         <div class="field-group">
+          <input
+            type="text"
+            id="recipe-name"
+            placeholder="Recipe name (optional)"
+            aria-label="Recipe name"
+          />
           <button id="save-recipe-btn">Save Recipe</button>
         </div>
       </section>
@@ -103,6 +110,11 @@
           <button id="add-grocery-btn">Add to List</button>
         </div>
         <ul id="grocery-list" class="list"></ul>
+
+        <!-- Copy grocery list to clipboard -->
+        <div class="field-group">
+          <button id="copy-grocery-btn">Copy Grocery List</button>
+        </div>
       </section>
 
       <!-- Receipt scanner section -->
