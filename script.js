@@ -29,13 +29,9 @@ const AUTH_PASSWORD = 'password123';
  * offers a generous free tier with 1 GiB storage and 50k reads per day【685750844728363†L1419-L1433】.
  */
 const firebaseConfig = {
-  apiKey: "AIzaSyBWxgNPsR0MPsoyM0Po9XxuSmK9kEySS1Y",
-  authDomain: "grocery-planner-10c99.firebaseapp.com",
-  projectId: "grocery-planner-10c99",
-  storageBucket: "grocery-planner-10c99.firebasestorage.app",
-  messagingSenderId: "2067957623",
-  appId: "1:2067957623:web:0b66798f7f75c951ca4372",
-  measurementId: "G-7FXJQST5N3"
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_AUTH_DOMAIN',
+  projectId: 'YOUR_PROJECT_ID',
 };
 
 // Initialize Firebase and Firestore if the SDKs are loaded. The compat
@@ -436,11 +432,24 @@ window.addEventListener('DOMContentLoaded', () => {
         alert('No ingredients to save.');
         return;
       }
-      const name = prompt('Enter a name for this recipe:', 'My Recipe');
-      if (!name) {
-        return;
+      // Determine the recipe name from the input field or fall back to a prompt
+      let recipeName = '';
+      const nameInput = document.getElementById('recipe-name');
+      if (nameInput) {
+        recipeName = nameInput.value.trim();
       }
-      const recipeName = name.trim();
+      if (!recipeName) {
+        // Prompt as a fallback for browsers where input may not exist
+        const fallback = prompt('Enter a name for this recipe:', 'My Recipe');
+        if (!fallback) {
+          return;
+        }
+        recipeName = fallback.trim();
+      }
+      // Clear the input field if present
+      if (nameInput) {
+        nameInput.value = '';
+      }
       const recipe = {
         name: recipeName,
         ingredients: [...ingredients],
@@ -503,4 +512,56 @@ window.addEventListener('DOMContentLoaded', () => {
   displayPantry();
   displayGroceryList();
   displaySavedRecipes();
+
+  // Copy grocery list to clipboard
+  const copyBtn = document.getElementById('copy-grocery-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      if (groceryList.length === 0) {
+        alert('Your grocery list is empty.');
+        return;
+      }
+      // Build a plain‑text list of items and categories
+      const text = groceryList
+        .map((item) => `${item.name}${item.category ? ' (' + item.category + ')' : ''}`)
+        .join('\n');
+      // Use the Clipboard API if available
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            alert('Grocery list copied to clipboard!');
+          })
+          .catch((err) => {
+            console.error('Clipboard write failed:', err);
+            alert('Failed to copy grocery list. Please copy manually.');
+          });
+      } else {
+        // Fallback: use a temporary textarea for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          alert('Grocery list copied to clipboard!');
+        } catch (err) {
+          console.error('ExecCommand copy failed:', err);
+          alert('Failed to copy grocery list. Please copy manually.');
+        }
+        document.body.removeChild(textarea);
+      }
+    });
+  }
+});
+
+// Fallback: ensure login check runs after all resources load (useful on some mobile browsers)
+window.addEventListener('load', () => {
+  try {
+    checkLogin();
+  } catch (err) {
+    console.error('Error during login check on load:', err);
+  }
 });
